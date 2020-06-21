@@ -4,6 +4,41 @@ const { createJWTToken } = require ('../helpers/jwt');
 const encrypt = require ('../helpers/crypto');
 
 module.exports = {
+    encryptpass(req,res){
+        const {pass}=req.query
+        const encryptpass=encrypt(pass)
+        res.send(encryptpass)
+    },
+
+    login: (req, res) => {
+        const { username, password } = req.query
+        let sql = `select * from user where username='${username}' and password='${encrypt(password)}'`
+        db.query(sql, (error, result) => {
+            if (error) return res.status(500).send(error)
+            if (result.length) {
+                sql = 
+                    `select count(*) as jumlahcart
+                    from transaction t join transactiondetails td on t.id=td.transactionid
+                    where t.userid=${result[0].id} and t.status='oncart'`
+                db.query( sql, (error, result1) => {
+                    if (error) return res.status(500).send(error)
+                    const token = createJWTToken ({
+                        id: result[0].id,
+                        username: result[0].username
+                    })
+                    res.status(200).send({
+                        ...result[0],
+                        jumlahcart: result1[0].jumlahcart,
+                        status: true,
+                        token: token
+                    })
+                })
+            } else {
+                return res.status(200).send({ status: false })
+            }
+        })
+    },
+
     register: (req, res) => {
         const { username, email, password } = req.body
         let sql = `select * from user where username ='${username}'`         // let sql = `select * from users where username = '${username}' or email = '${email}'`
@@ -85,34 +120,7 @@ module.exports = {
         })
     },
 
-    login: (req, res) => {
-        const { username, password } = req.query
-        let sql = `select * from user where username='${username}' and password='${encrypt(password)}'`
-        db.query(sql, (error, result) => {
-            if (error) return res.status(500).send(error)
-            if (result.length) {
-                sql = 
-                    `select count(*) as jumlahcart
-                    from transaction t join transactiondetails td on t.id=td.transactionid
-                    where t.userid=${result[0].id} and t.status='oncart'`
-                db.query( sql, (error, result1) => {
-                    if (error) return res.status(500).send(error)
-                    const token = createJWTToken ({
-                        id: result[0].id,
-                        username: result[0].username
-                    })
-                    res.status(200).send({
-                        ...result[0],
-                        jumlahcart: result1[0].jumlahcart,
-                        status: true,
-                        token: token
-                    })
-                })
-            } else {
-                return res.status(200).send({ status: false })
-            }
-        })
-    },
+    
 
     keepLogin: (req, res) => {
         let sql = `select * from user where id=${req.user.id}`

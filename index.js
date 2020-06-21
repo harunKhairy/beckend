@@ -17,9 +17,11 @@ app.get('/', (req, res) => {
 })
 
 const {
-    AuthRouter
+    AuthRouter,
+    ProductRouter
 } = require ('./routers')
 
-app.use('/auth', AuthRouter)
+app.use('/auth', AuthRouter);
+app.use('/product', ProductRouter);
 
 app.listen(PORT, ()=> console.log(`API running on PORT ${PORT}`))
